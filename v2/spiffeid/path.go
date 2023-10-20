@@ -35,7 +35,9 @@ func JoinPathSegments(segments ...string) (string, error) {
 // ValidatePath validates that a path string is a conformant path for a SPIFFE
 // ID.
 // See https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md#22-path
-func ValidatePath(path string) error {
+func ValidatePath(path string, opts ...Option) error {
+	o := setOpts(opts...)
+	isPathCharFn := getIsPathCharFn(o)
 	switch {
 	case path == "":
 		return nil
@@ -57,7 +59,7 @@ func ValidatePath(path string) error {
 			segmentStart = segmentEnd
 			continue
 		}
-		if !isValidPathSegmentChar(c) {
+		if !isValidPathSegmentChar(c, isPathCharFn) {
 			return errBadPathSegmentChar
 		}
 	}
@@ -74,7 +76,9 @@ func ValidatePath(path string) error {
 // ValidatePathSegment validates that a string is a conformant segment for
 // inclusion in the path for a SPIFFE ID.
 // See https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md#22-path
-func ValidatePathSegment(segment string) error {
+func ValidatePathSegment(segment string, opts ...Option) error {
+	o := setOpts(opts...)
+	isPathCharFn := getIsPathCharFn(o)
 	switch segment {
 	case "":
 		return errEmptySegment
@@ -82,14 +86,14 @@ func ValidatePathSegment(segment string) error {
 		return errDotSegment
 	}
 	for i := 0; i < len(segment); i++ {
-		if !isValidPathSegmentChar(segment[i]) {
+		if !isValidPathSegmentChar(segment[i], isPathCharFn) {
 			return errBadPathSegmentChar
 		}
 	}
 	return nil
 }
 
-func isValidPathSegmentChar(c uint8) bool {
+func isValidPathSegmentChar(c uint8, isPathCharFn func(uint82 uint8) bool) bool {
 	switch {
 	case c >= 'a' && c <= 'z':
 		return true
@@ -99,7 +103,7 @@ func isValidPathSegmentChar(c uint8) bool {
 		return true
 	case c == '-', c == '.', c == '_':
 		return true
-	case isBackcompatPathChar(c):
+	case isPathCharFn(c):
 		return true
 	default:
 		return false

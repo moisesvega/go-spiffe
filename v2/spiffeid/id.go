@@ -47,8 +47,32 @@ func FromSegments(td TrustDomain, segments ...string) (ID, error) {
 	return makeID(td, path)
 }
 
+type options struct {
+	allowCharsetBackCompat bool
+}
+
+// Option will override some functions.
+type Option func(o *options)
+
+// AllowCharsetBackCompat will allow charset back compat
+func AllowCharsetBackCompat() Option {
+	return func(o *options) {
+		o.allowCharsetBackCompat = true
+	}
+}
+
+func setOpts(opts ...Option) *options {
+	o := &options{}
+	for _, opt := range opts {
+		opt(o)
+	}
+	return o
+}
+
 // FromString parses a SPIFFE ID from a string.
-func FromString(id string) (ID, error) {
+func FromString(id string, opts ...Option) (ID, error) {
+	o := setOpts(opts...)
+	isTrustDomainCharFn := getTrustDomainCharFn(o)
 	switch {
 	case id == "":
 		return ID{}, errEmpty
@@ -62,7 +86,7 @@ func FromString(id string) (ID, error) {
 		if c == '/' {
 			break
 		}
-		if !isValidTrustDomainChar(c) {
+		if !isValidTrustDomainChar(c, isTrustDomainCharFn) {
 			return ID{}, errBadTrustDomainChar
 		}
 	}

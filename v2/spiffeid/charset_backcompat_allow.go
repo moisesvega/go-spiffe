@@ -3,40 +3,10 @@
 
 package spiffeid
 
-func isBackcompatTrustDomainChar(c uint8) bool {
-	if isSubDelim(c) {
-		return true
-	}
-	switch c {
-	// unreserved
-	case '~':
-		return true
-	default:
-		return false
-	}
+func getDefaultTrustDomainCharFn() func(c uint8) bool {
+	return allowBackcompatTrustDomainChar
 }
 
-func isBackcompatPathChar(c uint8) bool {
-	if isSubDelim(c) {
-		return true
-	}
-	switch c {
-	// unreserved
-	case '~':
-		return true
-	// gen-delims
-	case ':', '[', ']', '@':
-		return true
-	default:
-		return false
-	}
-}
-
-func isSubDelim(c uint8) bool {
-	switch c {
-	case '!', '$', '&', '\'', '(', ')', '*', '+', ',', ';', '=':
-		return true
-	default:
-		return false
-	}
+func getDefaultPathCharFn() func(c uint8) bool {
+	return allowBackcompatPathChar
 }

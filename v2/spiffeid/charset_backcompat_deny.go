@@ -3,10 +3,10 @@
 
 package spiffeid
 
-func isBackcompatTrustDomainChar(c uint8) bool {
-	return false
+func getDefaultTrustDomainCharFn() func(c uint8) bool {
+	return notAllowBackcompatTrustDomainChar
 }
 
-func isBackcompatPathChar(c uint8) bool {
-	return false
+func getDefaultPathCharFn() func(c uint8) bool {
+	return notAllowBackcompatPathChar
 }

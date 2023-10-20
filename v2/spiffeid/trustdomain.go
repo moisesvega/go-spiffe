@@ -15,7 +15,9 @@ type TrustDomain struct {
 // can either be a trust domain name (e.g. example.org), or a valid SPIFFE ID
 // URI (e.g. spiffe://example.org), otherwise an error is returned.
 // See https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE-ID.md#21-trust-domain.
-func TrustDomainFromString(idOrName string) (TrustDomain, error) {
+func TrustDomainFromString(idOrName string, opts ...Option) (TrustDomain, error) {
+	o := setOpts(opts...)
+	isTrustDomainCharFn := getTrustDomainCharFn(o)
 	switch {
 	case idOrName == "":
 		return TrustDomain{}, errMissingTrustDomain
@@ -30,7 +32,7 @@ func TrustDomainFromString(idOrName string) (TrustDomain, error) {
 		return id.TrustDomain(), nil
 	default:
 		for i := 0; i < len(idOrName); i++ {
-			if !isValidTrustDomainChar(idOrName[i]) {
+			if !isValidTrustDomainChar(idOrName[i], isTrustDomainCharFn) {
 				return TrustDomain{}, errBadTrustDomainChar
 			}
 		}
@@ -111,7 +113,7 @@ func (td *TrustDomain) UnmarshalText(text []byte) error {
 	return nil
 }
 
-func isValidTrustDomainChar(c uint8) bool {
+func isValidTrustDomainChar(c uint8, isTrustDomainChar func(c uint8) bool) bool {
 	switch {
 	case c >= 'a' && c <= 'z':
 		return true
@@ -119,7 +121,7 @@ func isValidTrustDomainChar(c uint8) bool {
 		return true
 	case c == '-', c == '.', c == '_':
 		return true
-	case isBackcompatTrustDomainChar(c):
+	case isTrustDomainChar(c):
 		return true
 	default:
 		return false
